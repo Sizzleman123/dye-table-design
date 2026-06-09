@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { LOGOS, LogoItem } from '@/lib/logoData';
-import { SECTIONS } from '@/lib/tableLayout';
+import { getLayout, LAYOUTS } from '@/lib/tableLayout';
 
 export interface SectionFill {
   logoId: string;
@@ -10,18 +10,25 @@ export interface SectionFill {
   rotation: number;
   offsetX: number;
   offsetY: number;
-  inverted: boolean; // swap bold color background <-> light background
+  inverted: boolean; // light panel <-> bold brand-color panel
 }
 
 export type SectionsState = Record<string, SectionFill | null>;
 
+interface Snapshot {
+  layoutId: string;
+  sections: SectionsState;
+}
+
 interface TableStore {
+  layoutId: string;
   sections: SectionsState;
   selectedSectionId: string | null;
-  history: SectionsState[];
+  history: Snapshot[];
   historyIndex: number;
   toasts: { id: string; message: string; type: 'success' | 'info' }[];
 
+  setLayout: (layoutId: string) => void;
   selectSection: (id: string | null) => void;
   fillSection: (sectionId: string, logo: LogoItem) => void;
   clearSection: (sectionId: string) => void;
@@ -32,36 +39,52 @@ interface TableStore {
   redo: () => void;
   addToast: (message: string, type?: 'success' | 'info') => void;
   removeToast: (id: string) => void;
-  loadDesign: (sections: SectionsState) => void;
+  loadDesign: (layoutId: string, sections: SectionsState) => void;
 }
 
-function emptySections(): SectionsState {
+function emptySections(layoutId: string): SectionsState {
   const s: SectionsState = {};
-  SECTIONS.forEach(sec => { s[sec.id] = null; });
+  getLayout(layoutId).sections.forEach(sec => { s[sec.id] = null; });
   return s;
 }
 
-function clone(s: SectionsState): SectionsState {
-  return JSON.parse(JSON.stringify(s));
+function clone<T>(v: T): T {
+  return JSON.parse(JSON.stringify(v));
 }
 
-function pushHistory(get: () => TableStore, sections: SectionsState) {
+function pushHistory(get: () => TableStore, layoutId: string, sections: SectionsState) {
   const { history, historyIndex } = get();
   const next = history.slice(0, historyIndex + 1);
-  next.push(clone(sections));
+  next.push({ layoutId, sections: clone(sections) });
   return { history: next.slice(-40), historyIndex: Math.min(next.length - 1, 39) };
 }
 
+const DEFAULT_LAYOUT = LAYOUTS[0].id;
+
 export const useTableStore = create<TableStore>((set, get) => ({
-  sections: emptySections(),
+  layoutId: DEFAULT_LAYOUT,
+  sections: emptySections(DEFAULT_LAYOUT),
   selectedSectionId: null,
-  history: [emptySections()],
+  history: [{ layoutId: DEFAULT_LAYOUT, sections: emptySections(DEFAULT_LAYOUT) }],
   historyIndex: 0,
   toasts: [],
+
+  setLayout: (layoutId) => {
+    if (layoutId === get().layoutId) return;
+    const sections = emptySections(layoutId);
+    set({
+      layoutId,
+      sections,
+      selectedSectionId: null,
+      ...pushHistory(get, layoutId, sections),
+    });
+    get().addToast(`Switched to ${getLayout(layoutId).name} layout`, 'info');
+  },
 
   selectSection: (id) => set({ selectedSectionId: id }),
 
   fillSection: (sectionId, logo) => {
+    const { layoutId } = get();
     const sections = clone(get().sections);
     sections[sectionId] = {
       logoId: logo.id,
@@ -71,34 +94,36 @@ export const useTableStore = create<TableStore>((set, get) => ({
       offsetY: 0,
       inverted: false,
     };
-    set({ sections, ...pushHistory(get, sections) });
+    set({ sections, ...pushHistory(get, layoutId, sections) });
     get().addToast(`${logo.name} painted in!`, 'success');
   },
 
   clearSection: (sectionId) => {
+    const { layoutId } = get();
     const sections = clone(get().sections);
     sections[sectionId] = null;
-    set({ sections, ...pushHistory(get, sections) });
+    set({ sections, ...pushHistory(get, layoutId, sections) });
   },
 
   updateFill: (sectionId, updates, commit = false) => {
+    const { layoutId } = get();
     const sections = clone(get().sections);
     const fill = sections[sectionId];
     if (!fill) return;
     sections[sectionId] = { ...fill, ...updates };
     if (commit) {
-      set({ sections, ...pushHistory(get, sections) });
+      set({ sections, ...pushHistory(get, layoutId, sections) });
     } else {
       set({ sections });
     }
   },
 
   randomize: () => {
+    const { layoutId } = get();
+    const layout = getLayout(layoutId);
     const sections: SectionsState = {};
-    // Shuffle the full logo list so neighbours differ; reuse if more
-    // sections than logos.
     const shuffled = [...LOGOS].sort(() => Math.random() - 0.5);
-    SECTIONS.forEach((sec, i) => {
+    layout.sections.forEach((sec, i) => {
       const logo = shuffled[i % shuffled.length];
       sections[sec.id] = {
         logoId: logo.id,
@@ -106,16 +131,17 @@ export const useTableStore = create<TableStore>((set, get) => ({
         rotation: 0,
         offsetX: 0,
         offsetY: 0,
-        inverted: Math.random() > 0.5,
+        inverted: false,
       };
     });
-    set({ sections, selectedSectionId: null, ...pushHistory(get, sections) });
+    set({ sections, selectedSectionId: null, ...pushHistory(get, layoutId, sections) });
     get().addToast('🎲 Fresh table generated!', 'success');
   },
 
   clearAll: () => {
-    const sections = emptySections();
-    set({ sections, selectedSectionId: null, ...pushHistory(get, sections) });
+    const { layoutId } = get();
+    const sections = emptySections(layoutId);
+    set({ sections, selectedSectionId: null, ...pushHistory(get, layoutId, sections) });
     get().addToast('Table cleared', 'info');
   },
 
@@ -123,14 +149,16 @@ export const useTableStore = create<TableStore>((set, get) => ({
     const { history, historyIndex } = get();
     if (historyIndex <= 0) return;
     const idx = historyIndex - 1;
-    set({ sections: clone(history[idx]), historyIndex: idx });
+    const snap = history[idx];
+    set({ layoutId: snap.layoutId, sections: clone(snap.sections), historyIndex: idx });
   },
 
   redo: () => {
     const { history, historyIndex } = get();
     if (historyIndex >= history.length - 1) return;
     const idx = historyIndex + 1;
-    set({ sections: clone(history[idx]), historyIndex: idx });
+    const snap = history[idx];
+    set({ layoutId: snap.layoutId, sections: clone(snap.sections), historyIndex: idx });
   },
 
   addToast: (message, type = 'success') => {
@@ -141,12 +169,17 @@ export const useTableStore = create<TableStore>((set, get) => ({
 
   removeToast: (id) => set(s => ({ toasts: s.toasts.filter(t => t.id !== id) })),
 
-  loadDesign: (sections) => {
-    const base = emptySections();
+  loadDesign: (layoutId, sections) => {
+    const base = emptySections(layoutId);
     Object.keys(base).forEach(k => {
       if (sections[k]) base[k] = sections[k];
     });
-    set({ sections: base, selectedSectionId: null, ...pushHistory(get, base) });
+    set({
+      layoutId,
+      sections: base,
+      selectedSectionId: null,
+      ...pushHistory(get, layoutId, base),
+    });
     get().addToast('Design loaded!', 'success');
   },
 }));

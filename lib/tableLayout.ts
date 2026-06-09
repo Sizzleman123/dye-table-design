@@ -1,6 +1,5 @@
-// Fixed beer die table layout — 23 irregular sections made from diagonal
-// cuts, triangles, trapezoids and polygons. The lines never move; users
-// only choose what fills each section.
+// Fixed beer die table layouts traced from real fraternity tables.
+// Lines never move — users only fill the sections.
 
 export const TABLE_W = 1000;
 export const TABLE_H = 500;
@@ -10,40 +9,91 @@ export interface Section {
   points: [number, number][];
 }
 
-export const SECTIONS: Section[] = [
-  // Left band
-  { id: 's1', points: [[0, 0], [180, 0], [0, 160]] },
-  { id: 's2', points: [[180, 0], [180, 250], [0, 160]] },
-  { id: 's3', points: [[0, 160], [180, 250], [0, 360]] },
-  { id: 's4', points: [[0, 360], [180, 250], [180, 500], [0, 500]] },
+export interface Layout {
+  id: string;
+  name: string;
+  description: string;
+  sections: Section[];
+}
 
-  // Left-center band
-  { id: 's5', points: [[180, 0], [380, 0], [380, 120], [180, 250]] },
-  { id: 's6', points: [[180, 250], [380, 120], [380, 300]] },
-  { id: 's7', points: [[180, 250], [380, 300], [280, 500], [180, 500]] },
-  { id: 's8', points: [[280, 500], [380, 300], [380, 500]] },
-
-  // Center band — X pattern meeting at (500, 250)
-  { id: 's9', points: [[380, 0], [500, 0], [500, 250]] },
-  { id: 's10', points: [[500, 0], [620, 0], [500, 250]] },
-  { id: 's11', points: [[380, 0], [500, 250], [380, 300]] },
-  { id: 's12', points: [[620, 0], [620, 320], [500, 250]] },
-  { id: 's13', points: [[380, 300], [500, 250], [500, 500], [380, 500]] },
-  { id: 's14', points: [[500, 250], [620, 320], [620, 500], [500, 500]] },
-
-  // Right-center band
-  { id: 's15', points: [[620, 0], [730, 0], [620, 180]] },
-  { id: 's16', points: [[730, 0], [820, 0], [620, 180]] },
-  { id: 's17', points: [[820, 0], [820, 200], [620, 320], [620, 180]] },
-  { id: 's18', points: [[620, 320], [820, 200], [820, 380], [720, 500], [620, 500]] },
-  { id: 's19', points: [[720, 500], [820, 380], [820, 500]] },
-
-  // Right band
-  { id: 's20', points: [[820, 0], [1000, 0], [1000, 130], [820, 200]] },
-  { id: 's21', points: [[820, 200], [1000, 130], [1000, 300]] },
-  { id: 's22', points: [[820, 200], [1000, 300], [820, 380]] },
-  { id: 's23', points: [[820, 380], [1000, 300], [1000, 500], [820, 500]] },
+// ── Layout 1: "Old Glory" ──────────────────────────────────────────
+// Traced from the flag table: one big panel on each end (perfect for a
+// full flag), with a chain of three full-height diamonds down the middle
+// and triangles filling the gaps.
+const oldGlory: Section[] = [
+  { id: 'g-end-l', points: [[0, 0], [200, 0], [200, 500], [0, 500]] },
+  { id: 'g-tl', points: [[200, 0], [300, 0], [200, 250]] },
+  { id: 'g-bl', points: [[200, 250], [300, 500], [200, 500]] },
+  { id: 'g-d1', points: [[200, 250], [300, 0], [400, 250], [300, 500]] },
+  { id: 'g-t1', points: [[300, 0], [500, 0], [400, 250]] },
+  { id: 'g-b1', points: [[300, 500], [400, 250], [500, 500]] },
+  { id: 'g-d2', points: [[400, 250], [500, 0], [600, 250], [500, 500]] },
+  { id: 'g-t2', points: [[500, 0], [700, 0], [600, 250]] },
+  { id: 'g-b2', points: [[500, 500], [600, 250], [700, 500]] },
+  { id: 'g-d3', points: [[600, 250], [700, 0], [800, 250], [700, 500]] },
+  { id: 'g-tr', points: [[700, 0], [800, 0], [800, 250]] },
+  { id: 'g-br', points: [[800, 250], [800, 500], [700, 500]] },
+  { id: 'g-end-r', points: [[800, 0], [1000, 0], [1000, 500], [800, 500]] },
 ];
+
+// ── Layout 2: "Pinwheel" ───────────────────────────────────────────
+// Traced from the Fireball table: triangles radiating from points along
+// the center line — four X-cut cells, 16 triangles total.
+const pinwheel: Section[] = (() => {
+  const sections: Section[] = [];
+  const cellW = 250;
+  for (let c = 0; c < 4; c++) {
+    const x0 = c * cellW;
+    const x1 = x0 + cellW;
+    const cx = x0 + cellW / 2;
+    const cy = 250;
+    sections.push(
+      { id: `p${c}-top`, points: [[x0, 0], [x1, 0], [cx, cy]] },
+      { id: `p${c}-right`, points: [[x1, 0], [x1, 500], [cx, cy]] },
+      { id: `p${c}-bottom`, points: [[x1, 500], [x0, 500], [cx, cy]] },
+      { id: `p${c}-left`, points: [[x0, 500], [x0, 0], [cx, cy]] },
+    );
+  }
+  return sections;
+})();
+
+// ── Layout 3: "Chevron" ────────────────────────────────────────────
+// Traced from the big-triangle sticker table: a 4x2 grid of squares,
+// each cut by one diagonal, directions alternating to form chevrons.
+const chevron: Section[] = (() => {
+  const sections: Section[] = [];
+  const s = 250;
+  for (let col = 0; col < 4; col++) {
+    for (let row = 0; row < 2; row++) {
+      const x = col * s, y = row * s;
+      const even = (col + row) % 2 === 0;
+      if (even) {
+        // diagonal top-left -> bottom-right
+        sections.push(
+          { id: `c${col}${row}a`, points: [[x, y], [x + s, y], [x + s, y + s]] },
+          { id: `c${col}${row}b`, points: [[x, y], [x + s, y + s], [x, y + s]] },
+        );
+      } else {
+        // diagonal bottom-left -> top-right
+        sections.push(
+          { id: `c${col}${row}a`, points: [[x, y], [x + s, y], [x, y + s]] },
+          { id: `c${col}${row}b`, points: [[x + s, y], [x + s, y + s], [x, y + s]] },
+        );
+      }
+    }
+  }
+  return sections;
+})();
+
+export const LAYOUTS: Layout[] = [
+  { id: 'old-glory', name: 'Old Glory', description: 'Flag panels + diamond chain', sections: oldGlory },
+  { id: 'pinwheel', name: 'Pinwheel', description: 'Triangles radiating from center points', sections: pinwheel },
+  { id: 'chevron', name: 'Chevron', description: 'Big alternating triangles', sections: chevron },
+];
+
+export function getLayout(id: string): Layout {
+  return LAYOUTS.find(l => l.id === id) ?? LAYOUTS[0];
+}
 
 export function polygonCentroid(points: [number, number][]): { x: number; y: number } {
   let area = 0, cx = 0, cy = 0;
@@ -67,6 +117,14 @@ export function polygonArea(points: [number, number][]): number {
     area += x0 * y1 - x1 * y0;
   }
   return Math.abs(area / 2);
+}
+
+export function polygonBBox(points: [number, number][]) {
+  const xs = points.map(p => p[0]);
+  const ys = points.map(p => p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 
 export function pointsToString(points: [number, number][]): string {

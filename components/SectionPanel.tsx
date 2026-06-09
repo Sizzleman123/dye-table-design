@@ -1,14 +1,16 @@
 'use client';
 import { useTableStore } from '@/store/tableStore';
 import { LOGOS } from '@/lib/logoData';
-import { SECTIONS } from '@/lib/tableLayout';
+import { getLayout } from '@/lib/tableLayout';
 
 export default function SectionPanel() {
+  const layoutId = useTableStore(s => s.layoutId);
   const selectedSectionId = useTableStore(s => s.selectedSectionId);
   const sections = useTableStore(s => s.sections);
   const updateFill = useTableStore(s => s.updateFill);
   const clearSection = useTableStore(s => s.clearSection);
 
+  const SECTIONS = getLayout(layoutId).sections;
   const filledCount = SECTIONS.filter(sec => sections[sec.id]).length;
 
   if (!selectedSectionId) {
@@ -44,10 +46,19 @@ export default function SectionPanel() {
       {/* Preview */}
       <div className="flex items-center gap-3">
         <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl border border-white/20"
-          style={{ background: fill.inverted ? logo.bg : logo.color }}
+          className="w-12 h-12 rounded-xl flex items-center justify-center border border-white/20 overflow-hidden"
+          style={{ background: fill.inverted ? logo.color : logo.bg }}
         >
-          {logo.emoji}
+          {logo.img ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logo.img} alt={logo.name} className="w-10 h-10 object-contain" />
+          ) : logo.letters ? (
+            <span className="font-black text-lg" style={{ color: fill.inverted ? logo.bg : logo.color, fontFamily: 'Georgia, serif' }}>
+              {logo.letters}
+            </span>
+          ) : (
+            <span className="text-2xl">{logo.emoji ?? '🎨'}</span>
+          )}
         </div>
         <div>
           <div className="font-semibold text-white truncate max-w-[140px]">{logo.name}</div>

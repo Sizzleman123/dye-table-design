@@ -2,7 +2,7 @@
 import { useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useTableStore } from '@/store/tableStore';
-import { TABLE_W, TABLE_H } from '@/lib/tableLayout';
+import { TABLE_W, TABLE_H, LAYOUTS } from '@/lib/tableLayout';
 import SearchPanel from '@/components/SearchPanel';
 import SectionPanel from '@/components/SectionPanel';
 import ToastContainer from '@/components/ToastContainer';
@@ -10,6 +10,8 @@ import ToastContainer from '@/components/ToastContainer';
 const TableSVG = dynamic(() => import('@/components/TableSVG'), { ssr: false });
 
 export default function Home() {
+  const layoutId = useTableStore(s => s.layoutId);
+  const setLayout = useTableStore(s => s.setLayout);
   const randomize = useTableStore(s => s.randomize);
   const clearAll = useTableStore(s => s.clearAll);
   const undo = useTableStore(s => s.undo);
@@ -24,7 +26,8 @@ export default function Home() {
     const design = params.get('design');
     if (design) {
       try {
-        useTableStore.getState().loadDesign(JSON.parse(atob(design)));
+        const data = JSON.parse(atob(design));
+        useTableStore.getState().loadDesign(data.layoutId ?? LAYOUTS[0].id, data.sections ?? {});
       } catch {
         // invalid share link — ignore
       }
@@ -32,7 +35,8 @@ export default function Home() {
   }, []);
 
   const saveDesign = useCallback(() => {
-    const data = JSON.stringify(useTableStore.getState().sections);
+    const { layoutId, sections } = useTableStore.getState();
+    const data = JSON.stringify({ layoutId, sections });
     const blob = new Blob([data], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -53,7 +57,8 @@ export default function Home() {
       const reader = new FileReader();
       reader.onload = (ev) => {
         try {
-          useTableStore.getState().loadDesign(JSON.parse(ev.target?.result as string));
+          const data = JSON.parse(ev.target?.result as string);
+          useTableStore.getState().loadDesign(data.layoutId ?? LAYOUTS[0].id, data.sections ?? {});
         } catch {
           addToast('Invalid file', 'info');
         }
@@ -64,7 +69,8 @@ export default function Home() {
   }, [addToast]);
 
   const shareDesign = useCallback(() => {
-    const data = btoa(JSON.stringify(useTableStore.getState().sections));
+    const { layoutId, sections } = useTableStore.getState();
+    const data = btoa(JSON.stringify({ layoutId, sections }));
     const url = `${window.location.origin}${window.location.pathname}?design=${data}`;
     navigator.clipboard.writeText(url).then(
       () => addToast('Share link copied!', 'success'),
@@ -72,10 +78,34 @@ export default function Home() {
     );
   }, [addToast]);
 
-  const exportPNG = useCallback(() => {
+  const exportPNG = useCallback(async () => {
     const svg = document.getElementById('table-svg');
     if (!svg) return;
-    const xml = new XMLSerializer().serializeToString(svg);
+    addToast('Preparing export…', 'info');
+
+    // External logo images won't rasterize from an SVG blob, so fetch
+    // each one and inline it as a data URL first.
+    const clone = svg.cloneNode(true) as SVGElement;
+    const images = Array.from(clone.querySelectorAll('image'));
+    await Promise.all(images.map(async (imgEl) => {
+      const href = imgEl.getAttribute('href');
+      if (!href || href.startsWith('data:')) return;
+      try {
+        const res = await fetch(href, { mode: 'cors' });
+        const blob = await res.blob();
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result as string);
+          r.onerror = reject;
+          r.readAsDataURL(blob);
+        });
+        imgEl.setAttribute('href', dataUrl);
+      } catch {
+        imgEl.remove(); // image not CORS-fetchable — drop it, keep the panel
+      }
+    }));
+
+    const xml = new XMLSerializer().serializeToString(clone);
     const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const img = new Image();
@@ -103,8 +133,8 @@ export default function Home() {
   return (
     <div className="flex flex-col h-full bg-[#111] overflow-hidden">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-2.5 bg-[#0d0d0d] border-b border-white/10 flex-shrink-0">
-        <div className="flex items-center gap-3">
+      <header className="flex items-center justify-between px-4 py-2.5 bg-[#0d0d0d] border-b border-white/10 flex-shrink-0 gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0">
           <div className="text-2xl">🎯</div>
           <div>
             <h1 className="text-lg font-black text-white tracking-tight leading-none">Die Table Designer</h1>
@@ -112,16 +142,34 @@ export default function Home() {
           </div>
         </div>
 
-        <nav className="flex items-center gap-1.5">
+        {/* Layout presets */}
+        <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
+          {LAYOUTS.map(l => (
+            <button
+              key={l.id}
+              onClick={() => setLayout(l.id)}
+              title={l.description}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                layoutId === l.id
+                  ? 'bg-yellow-400 text-black'
+                  : 'text-gray-400 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              {l.name}
+            </button>
+          ))}
+        </div>
+
+        <nav className="flex items-center gap-1.5 flex-shrink-0">
           <HeaderBtn onClick={undo} disabled={historyIndex <= 0} title="Undo (⌘Z)">↩</HeaderBtn>
           <HeaderBtn onClick={redo} disabled={historyIndex >= historyLength - 1} title="Redo (⌘⇧Z)">↪</HeaderBtn>
           <div className="w-px h-6 bg-white/10 mx-1" />
-          <HeaderBtn onClick={importDesign} title="Import design">📂 Import</HeaderBtn>
+          <HeaderBtn onClick={importDesign} title="Import design">📂</HeaderBtn>
           <HeaderBtn onClick={saveDesign} title="Save design as file">💾 Save</HeaderBtn>
           <HeaderBtn onClick={shareDesign} title="Copy share link">🔗 Share</HeaderBtn>
           <HeaderBtn onClick={exportPNG} title="Export as image">📸 Export</HeaderBtn>
           <div className="w-px h-6 bg-white/10 mx-1" />
-          <HeaderBtn onClick={clearAll} title="Clear all sections">🗑 Clear</HeaderBtn>
+          <HeaderBtn onClick={clearAll} title="Clear all sections">🗑</HeaderBtn>
           <button
             onClick={randomize}
             className="px-4 py-1.5 text-sm font-semibold bg-yellow-500 hover:bg-yellow-400 text-black rounded-lg transition-all shadow"
@@ -133,17 +181,14 @@ export default function Home() {
 
       {/* Main layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left: search */}
         <aside className="w-60 flex-shrink-0 border-r border-white/10 flex flex-col bg-[#161616] overflow-hidden">
           <SearchPanel />
         </aside>
 
-        {/* Center: the table */}
         <main className="flex-1 overflow-hidden">
           <TableSVG />
         </main>
 
-        {/* Right: section controls */}
         <aside className="w-52 flex-shrink-0 border-l border-white/10 bg-[#161616] overflow-y-auto">
           <div className="px-3 pt-3 pb-1">
             <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Section</h2>
