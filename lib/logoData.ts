@@ -46,9 +46,22 @@ export const LOGOS: LogoItem[] = [
   { id: 'blue-moon', name: 'Blue Moon', category: 'beer', color: '#003087', bg: '#ffffff', img: clearbit('bluemoonbrewingcompany.com'), tags: ['blue moon', 'wheat', 'beer', 'orange'] },
   { id: 'white-claw', name: 'White Claw', category: 'beer', color: '#00a0b0', bg: '#ffffff', img: clearbit('whiteclaw.com'), tags: ['white claw', 'hard seltzer', 'claw'] },
   { id: 'truly', name: 'Truly', category: 'beer', color: '#ff6b00', bg: '#ffffff', img: clearbit('trulyhardseltzer.com'), tags: ['truly', 'hard seltzer', 'seltzer'] },
+  { id: 'michelob-ultra', name: 'Michelob Ultra', category: 'beer', color: '#002d72', bg: '#ffffff', img: clearbit('michelobultra.com'), tags: ['michelob', 'ultra', 'beer', 'light'] },
   { id: 'fireball', name: 'Fireball', category: 'beer', color: '#d62b0e', bg: '#fff3e0', img: clearbit('fireballwhisky.com'), tags: ['fireball', 'whisky', 'cinnamon', 'shots'] },
   { id: 'jack-daniels', name: "Jack Daniel's", category: 'beer', color: '#000000', bg: '#ffffff', img: clearbit('jackdaniels.com'), tags: ['jack daniels', 'whiskey', 'tennessee'] },
   { id: 'jameson', name: 'Jameson', category: 'beer', color: '#0f5a30', bg: '#ffffff', img: clearbit('jamesonwhiskey.com'), tags: ['jameson', 'irish', 'whiskey'] },
+
+  // ── Golf ───────────────────────────────────────────────────────
+  { id: 'masters', name: 'The Masters', category: 'outdoor', color: '#0a5c36', bg: '#fde900', img: clearbit('masters.com'), tags: ['masters', 'augusta', 'golf', 'tournament'] },
+  { id: 'augusta', name: 'Augusta National', category: 'outdoor', color: '#0a5c36', bg: '#ffffff', img: clearbit('augustanational.com'), tags: ['augusta national', 'augusta', 'golf', 'masters'] },
+  { id: 'titleist', name: 'Titleist', category: 'outdoor', color: '#000000', bg: '#ffffff', img: clearbit('titleist.com'), tags: ['titleist', 'golf', 'balls', 'pro v1'] },
+  { id: 'taylormade', name: 'TaylorMade', category: 'outdoor', color: '#000000', bg: '#ffffff', img: clearbit('taylormadegolf.com'), tags: ['taylormade', 'golf', 'driver'] },
+  { id: 'callaway', name: 'Callaway', category: 'outdoor', color: '#000000', bg: '#ffffff', img: clearbit('callawaygolf.com'), tags: ['callaway', 'golf'] },
+  { id: 'ping', name: 'Ping', category: 'outdoor', color: '#000000', bg: '#ffffff', img: clearbit('ping.com'), tags: ['ping', 'golf', 'clubs'] },
+  { id: 'scotty-cameron', name: 'Scotty Cameron', category: 'outdoor', color: '#8b0000', bg: '#ffffff', img: clearbit('scottycameron.com'), tags: ['scotty cameron', 'putter', 'golf'] },
+  { id: 'pxg', name: 'PXG', category: 'outdoor', color: '#000000', bg: '#ffffff', img: clearbit('pxg.com'), tags: ['pxg', 'golf', 'parsons'] },
+  { id: 'footjoy', name: 'FootJoy', category: 'outdoor', color: '#000000', bg: '#ffffff', img: clearbit('footjoy.com'), tags: ['footjoy', 'golf', 'shoes', 'fj'] },
+  { id: 'peter-millar', name: 'Peter Millar', category: 'outdoor', color: '#1e3a5f', bg: '#ffffff', img: clearbit('petermillar.com'), tags: ['peter millar', 'golf', 'apparel'] },
 
   // ── Energy drinks ──────────────────────────────────────────────
   { id: 'red-bull', name: 'Red Bull', category: 'energy', color: '#cc0000', bg: '#ffffff', img: clearbit('redbull.com'), tags: ['red bull', 'energy', 'wings', 'bull'] },
@@ -100,6 +113,7 @@ export const LOGOS: LogoItem[] = [
   { id: 'florida', name: 'Florida', category: 'college', color: '#0021a5', bg: '#fa4616', img: espn('ncaa', '57'), tags: ['florida', 'gators', 'uf', 'chomp'] },
   { id: 'michigan-state', name: 'Michigan State', category: 'college', color: '#18453b', bg: '#ffffff', img: espn('ncaa', '127'), tags: ['michigan state', 'spartans', 'msu'] },
   { id: 'sdsu', name: 'San Diego State', category: 'college', color: '#a6192e', bg: '#000000', img: espn('ncaa', '21'), tags: ['sdsu', 'aztecs', 'san diego state'] },
+  { id: 'ucla', name: 'UCLA', category: 'college', color: '#2774ae', bg: '#ffd100', img: espn('ncaa', '26'), tags: ['ucla', 'bruins', 'los angeles'] },
 
   // ── Fraternities (painted Greek letters, like the real tables) ─
   { id: 'sigma-chi', name: 'Sigma Chi', category: 'frat', color: '#003087', bg: '#d4af37', letters: 'ΣΧ', tags: ['sigma chi', 'frat', 'greek', 'sig chi'] },
@@ -114,6 +128,8 @@ export const LOGOS: LogoItem[] = [
   { id: 'theta-chi', name: 'Theta Chi', category: 'frat', color: '#cc0000', bg: '#ffffff', letters: 'ΘΧ', tags: ['theta chi', 'frat', 'greek', 'ox'] },
   { id: 'lambda-chi', name: 'Lambda Chi', category: 'frat', color: '#006633', bg: '#d4af37', letters: 'ΛΧΑ', tags: ['lambda chi', 'lambda chi alpha', 'frat', 'greek'] },
   { id: 'zeta-psi', name: 'Zeta Psi', category: 'frat', color: '#ffffff', bg: '#000080', letters: 'ΖΨ', tags: ['zeta psi', 'frat', 'greek'] },
+  { id: 'sigma-nu', name: 'Sigma Nu', category: 'frat', color: '#d4af37', bg: '#000000', letters: 'ΣΝ', tags: ['sigma nu', 'frat', 'greek', 'snakes'] },
+  { id: 'fiji', name: 'FIJI', category: 'frat', color: '#4b2d83', bg: '#ffffff', letters: 'ΦΓΔ', tags: ['fiji', 'phi gamma delta', 'frat', 'greek'] },
 
   // ── Flags (fill the whole section) ─────────────────────────────
   { id: 'usa', name: 'USA Flag', category: 'flag', color: '#b22234', bg: '#ffffff', img: flag('us'), cover: true, tags: ['usa', 'american', 'flag', 'america', 'stars stripes', 'merica'] },

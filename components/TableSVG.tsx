@@ -1,7 +1,6 @@
 'use client';
 import { useRef, useCallback, useEffect, useState } from 'react';
-import { useTableStore, SectionFill } from '@/store/tableStore';
-import { LOGOS, LogoItem } from '@/lib/logoData';
+import { useTableStore, SectionFill, FillLogo } from '@/store/tableStore';
 import {
   getLayout, TABLE_W, TABLE_H,
   polygonCentroid, polygonArea, polygonBBox, pointsToString, Section,
@@ -141,9 +140,15 @@ export default function TableSVG() {
             </pattern>
           </defs>
 
-          {/* Base plywood (visible only in unfilled sections) */}
-          <rect x={0} y={0} width={TABLE_W} height={TABLE_H} fill="#c9a05c" />
-          <rect x={0} y={0} width={TABLE_W} height={TABLE_H} fill="url(#wood-grain)" opacity={0.5} />
+          {/* Base (visible only in unfilled sections): painted color or plywood */}
+          {layout.baseColor ? (
+            <rect x={0} y={0} width={TABLE_W} height={TABLE_H} fill={layout.baseColor} />
+          ) : (
+            <>
+              <rect x={0} y={0} width={TABLE_W} height={TABLE_H} fill="#c9a05c" />
+              <rect x={0} y={0} width={TABLE_W} height={TABLE_H} fill="url(#wood-grain)" opacity={0.5} />
+            </>
+          )}
 
           {/* Section fills */}
           {layout.sections.map(sec => (
@@ -221,12 +226,12 @@ interface SectionShapeProps {
 }
 
 function SectionShape({ section, fill, isSelected, onPointerDown, imageFailed, markFailed }: SectionShapeProps) {
-  const logo = fill ? LOGOS.find(l => l.id === fill.logoId) : null;
+  const logo = fill ? fill.logo : null;
   const centroid = polygonCentroid(section.points);
   const size = Math.sqrt(polygonArea(section.points));
   const bbox = polygonBBox(section.points);
 
-  const hasImage = !!(logo?.img && !imageFailed.has(logo.id));
+  const hasImage = !!(logo?.img && !imageFailed.has(logo.img));
   const bgColor = logo ? (fill!.inverted ? logo.color : logo.bg) : 'transparent';
 
   return (
@@ -252,7 +257,7 @@ function SectionShape({ section, fill, isSelected, onPointerDown, imageFailed, m
                 width={bbox.w * fill.scale}
                 height={bbox.h * fill.scale}
                 preserveAspectRatio="xMidYMid slice"
-                onError={() => markFailed(logo.id)}
+                onError={() => markFailed(logo.img!)}
               />
             </g>
           ) : hasImage ? (
@@ -265,7 +270,7 @@ function SectionShape({ section, fill, isSelected, onPointerDown, imageFailed, m
                 width={size * 0.84}
                 height={size * 0.84}
                 preserveAspectRatio="xMidYMid meet"
-                onError={() => markFailed(logo.id)}
+                onError={() => markFailed(logo.img!)}
               />
             </g>
           ) : (
@@ -294,7 +299,7 @@ function SectionShape({ section, fill, isSelected, onPointerDown, imageFailed, m
 // Painted-style rendering for frats (Greek letters), graphics (emblem),
 // and any logo whose image failed to load.
 function PaintedFallback({ logo, fill, centroid, size }: {
-  logo: LogoItem;
+  logo: FillLogo;
   fill: SectionFill;
   centroid: { x: number; y: number };
   size: number;

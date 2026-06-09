@@ -1,16 +1,29 @@
 'use client';
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import { LOGOS, LogoItem } from '@/lib/logoData';
+import { LOGOS } from '@/lib/logoData';
+import { curatedToResult, LogoResult } from '@/lib/logoSearch';
 import { getLayout, LAYOUTS } from '@/lib/tableLayout';
 
+// Fills embed the full logo data (not an id) so any web search result —
+// not just curated entries — can live on the table and in share links.
+export interface FillLogo {
+  name: string;
+  img?: string;
+  letters?: string;
+  emoji?: string;
+  color: string;
+  bg: string;
+  cover?: boolean;
+}
+
 export interface SectionFill {
-  logoId: string;
+  logo: FillLogo;
   scale: number;
   rotation: number;
   offsetX: number;
   offsetY: number;
-  inverted: boolean; // light panel <-> bold brand-color panel
+  inverted: boolean;
 }
 
 export type SectionsState = Record<string, SectionFill | null>;
@@ -30,7 +43,7 @@ interface TableStore {
 
   setLayout: (layoutId: string) => void;
   selectSection: (id: string | null) => void;
-  fillSection: (sectionId: string, logo: LogoItem) => void;
+  fillSection: (sectionId: string, logo: FillLogo) => void;
   clearSection: (sectionId: string) => void;
   updateFill: (sectionId: string, updates: Partial<SectionFill>, commit?: boolean) => void;
   randomize: () => void;
@@ -40,6 +53,18 @@ interface TableStore {
   addToast: (message: string, type?: 'success' | 'info') => void;
   removeToast: (id: string) => void;
   loadDesign: (layoutId: string, sections: SectionsState) => void;
+}
+
+export function resultToFill(r: LogoResult): FillLogo {
+  return {
+    name: r.name,
+    img: r.img,
+    letters: r.letters,
+    emoji: r.emoji,
+    color: r.color,
+    bg: r.bg,
+    cover: r.cover,
+  };
 }
 
 function emptySections(layoutId: string): SectionsState {
@@ -87,7 +112,7 @@ export const useTableStore = create<TableStore>((set, get) => ({
     const { layoutId } = get();
     const sections = clone(get().sections);
     sections[sectionId] = {
-      logoId: logo.id,
+      logo,
       scale: 1,
       rotation: 0,
       offsetX: 0,
@@ -126,7 +151,7 @@ export const useTableStore = create<TableStore>((set, get) => ({
     layout.sections.forEach((sec, i) => {
       const logo = shuffled[i % shuffled.length];
       sections[sec.id] = {
-        logoId: logo.id,
+        logo: resultToFill(curatedToResult(logo)),
         scale: 1,
         rotation: 0,
         offsetX: 0,
@@ -172,7 +197,8 @@ export const useTableStore = create<TableStore>((set, get) => ({
   loadDesign: (layoutId, sections) => {
     const base = emptySections(layoutId);
     Object.keys(base).forEach(k => {
-      if (sections[k]) base[k] = sections[k];
+      const fill = sections[k];
+      if (fill && fill.logo) base[k] = fill;
     });
     set({
       layoutId,

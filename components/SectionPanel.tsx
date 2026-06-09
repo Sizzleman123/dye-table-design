@@ -1,6 +1,5 @@
 'use client';
 import { useTableStore } from '@/store/tableStore';
-import { LOGOS } from '@/lib/logoData';
 import { getLayout } from '@/lib/tableLayout';
 
 export default function SectionPanel() {
@@ -26,9 +25,8 @@ export default function SectionPanel() {
   }
 
   const fill = sections[selectedSectionId];
-  const logo = fill ? LOGOS.find(l => l.id === fill.logoId) : null;
 
-  if (!fill || !logo) {
+  if (!fill) {
     return (
       <div className="p-4 text-center text-gray-500 text-sm slide-up">
         <div className="text-3xl mb-2 opacity-50">🎨</div>
@@ -41,12 +39,14 @@ export default function SectionPanel() {
     );
   }
 
+  const logo = fill.logo;
+
   return (
     <div className="p-3 space-y-4 text-sm slide-up">
       {/* Preview */}
       <div className="flex items-center gap-3">
         <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center border border-white/20 overflow-hidden"
+          className="w-12 h-12 rounded-xl flex items-center justify-center border border-white/20 overflow-hidden flex-shrink-0"
           style={{ background: fill.inverted ? logo.color : logo.bg }}
         >
           {logo.img ? (
@@ -60,8 +60,8 @@ export default function SectionPanel() {
             <span className="text-2xl">{logo.emoji ?? '🎨'}</span>
           )}
         </div>
-        <div>
-          <div className="font-semibold text-white truncate max-w-[140px]">{logo.name}</div>
+        <div className="min-w-0">
+          <div className="font-semibold text-white truncate">{logo.name}</div>
           <div className="text-gray-500 text-xs">in this section</div>
         </div>
       </div>
@@ -98,6 +98,16 @@ export default function SectionPanel() {
 
       {/* Actions */}
       <div className="grid grid-cols-2 gap-1.5">
+        {logo.img && (
+          <button
+            onClick={() => updateFill(selectedSectionId, { logo: { ...logo, cover: !logo.cover } }, true)}
+            className={`py-1.5 rounded-lg text-xs font-medium transition-all ${
+              logo.cover ? 'bg-yellow-500/20 text-yellow-300' : 'bg-white/8 text-gray-300 hover:bg-white/15'
+            }`}
+          >
+            ⛶ {logo.cover ? 'Fit logo' : 'Fill section'}
+          </button>
+        )}
         <button
           onClick={() => updateFill(selectedSectionId, { inverted: !fill.inverted }, true)}
           className="py-1.5 rounded-lg text-xs font-medium bg-white/8 text-gray-300 hover:bg-white/15 transition-all"
@@ -112,9 +122,9 @@ export default function SectionPanel() {
         </button>
         <button
           onClick={() => clearSection(selectedSectionId)}
-          className="py-1.5 rounded-lg text-xs font-medium bg-red-900/30 text-red-400 hover:bg-red-900/50 transition-all col-span-2"
+          className="py-1.5 rounded-lg text-xs font-medium bg-red-900/30 text-red-400 hover:bg-red-900/50 transition-all"
         >
-          🗑 Clear section
+          🗑 Clear
         </button>
       </div>
 
