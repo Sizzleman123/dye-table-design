@@ -52,7 +52,7 @@ async function searchClearbit(query: string, signal: AbortSignal): Promise<LogoR
   return data.map(c => ({
     id: `brand-${c.domain}`,
     name: c.name,
-    img: `${c.logo}?size=256`,
+    img: `/api/img?url=${encodeURIComponent(`${c.logo}?size=256`)}`,
     color: '#1a1a1a',
     bg: '#ffffff',
     source: 'brand' as const,
@@ -78,7 +78,7 @@ async function searchWikipedia(query: string, signal: AbortSignal): Promise<Logo
     .map(p => ({
       id: `wiki-${p.pageid}`,
       name: p.title,
-      img: p.thumbnail!.source,
+      img: `/api/img?url=${encodeURIComponent(p.thumbnail!.source)}`,
       color: '#1a1a1a',
       bg: '#ffffff',
       source: 'wiki' as const,
@@ -88,7 +88,7 @@ async function searchWikipedia(query: string, signal: AbortSignal): Promise<Logo
 // ── Cache ───────────────────────────────────────────────────────────
 
 const memCache = new Map<string, LogoResult[]>();
-const LS_KEY = 'die-table-logo-cache-v1';
+const LS_KEY = 'die-table-logo-cache-v2';
 const LS_MAX_ENTRIES = 60;
 
 function readLS(): Record<string, { t: number; r: LogoResult[] }> {

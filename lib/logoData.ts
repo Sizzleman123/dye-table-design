@@ -21,10 +21,11 @@ export interface LogoItem {
   emoji?: string;  // fallback / graphics
 }
 
+const proxy = (url: string) => `/api/img?url=${encodeURIComponent(url)}`;
 const espn = (league: string, key: string) =>
-  `https://a.espncdn.com/i/teamlogos/${league}/500/${key}.png`;
-const clearbit = (domain: string) => `https://logo.clearbit.com/${domain}?size=256`;
-const flag = (code: string) => `https://flagcdn.com/w640/${code}.png`;
+  proxy(`https://a.espncdn.com/i/teamlogos/${league}/500/${key}.png`);
+const clearbit = (domain: string) => proxy(`https://logo.clearbit.com/${domain}?size=256`);
+const flag = (code: string) => proxy(`https://flagcdn.com/w640/${code}.png`);
 
 export const LOGOS: LogoItem[] = [
   // ── Beer & liquor ──────────────────────────────────────────────
